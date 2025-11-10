@@ -58,24 +58,35 @@
 #         raise HTTPException(502, f"Translation provider error: {e}")
 
 
-
-
-
-
-
-
-
-
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from app.services.translate_service import translate_text
 
 router = APIRouter()
+
+SUPPORTED_LANGS = {"EN", "DE", "AR"}  # you can extend this later
 
 class TranslateReq(BaseModel):
     text: str
     target: str
     source: str | None = None
+
+    @validator("target")
+    def validate_target(cls, v):
+        v = v.upper()
+        if v not in SUPPORTED_LANGS:
+            raise ValueError(f"Unsupported target language '{v}'. Use one of {SUPPORTED_LANGS}")
+        return v
+
+    # validate source if provided
+    @validator("source")
+    def validate_source(cls, v):
+        if v:
+            v = v.upper()
+            if v not in SUPPORTED_LANGS:
+                raise ValueError(f"Unsupported source language '{v}'. Use one of {SUPPORTED_LANGS}")
+        return v
+    
 
 @router.post("/translate")
 async def translate(req: TranslateReq):
@@ -84,3 +95,4 @@ async def translate(req: TranslateReq):
         return {"translated_text": translated, "provider": "deepl"}
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
+        

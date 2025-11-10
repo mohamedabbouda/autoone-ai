@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from app.routes import translate ,recommend  # later add chatbot, recommend
+import uvicorn
+
 
 app = FastAPI(title="AutoOne AI Layer")
 
@@ -15,3 +17,27 @@ app.include_router(translate.router, prefix="/api")
 # and for recommendations:
 # from app.routes import recommend
 app.include_router(recommend.router, prefix="/api")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# if __name__ == "__main__":
+#     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
