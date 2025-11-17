@@ -1,3 +1,13 @@
+# version: '3.9'
+
+# services:
+#   autoone-ai-service:
+#     build: .
+#     container_name: autoone-ai-service
+#     ports:
+#       - "8000:8000"
+#     restart: unless-stopped
+
 version: '3.9'
 
 services:
@@ -7,3 +17,8 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
+    networks:
+      - autoone-network
+
+networks:
+  autoone-network:
