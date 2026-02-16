@@ -13,13 +13,6 @@
 #     # temporary stub: just echoes back so we can test the contract
 #     return {"translated_text": f"[stub->{req.target}] {req.text}", "provider": "stub"}
 
-
-
-
-
-
-
-
 # import os, httpx
 # from fastapi import APIRouter, HTTPException
 # from pydantic import BaseModel
@@ -41,6 +34,7 @@
 #     if not DEEPL_API_KEY:
 #         raise HTTPException(500, "DEEPL_API_KEY not configured")
 #     params = {
+    
 #         "auth_key": DEEPL_API_KEY,
 #         "text": req.text,
 #         "target_lang": req.target.upper(),

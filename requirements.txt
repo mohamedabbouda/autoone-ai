@@ -15,5 +15,10 @@ starlette==0.48.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.37.0
+pandas==2.2.3
+scikit-learn==1.5.2
+joblib==1.4.2
+
+
 
 

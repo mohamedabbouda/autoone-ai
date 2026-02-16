@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import translate ,recommend  # later add chatbot, recommend
+from app.routes import translate ,recommend ,spare_parts # later add chatbot, recommend
 import uvicorn
 
 
@@ -20,6 +20,7 @@ app.include_router(recommend.router, prefix="/api")
 
 
 
+app.include_router(spare_parts.router, prefix="/api")
 
 
 
