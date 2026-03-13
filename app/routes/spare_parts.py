@@ -60,7 +60,7 @@ async def search_spare_parts(req: SearchRequest):
         )
 
         # 3) pagination
-        page_items, total, total_pages = paginate(
+        page_items, total, total_pages,page = paginate(
             filtered,
             page=req.page,
             page_size=req.page_size,
