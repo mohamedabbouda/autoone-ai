@@ -8,6 +8,11 @@
 #       - "8000:8000"
 #     restart: unless-stopped
 
+
+
+
+
+z`csds
 version: '3.9'
 
 services:
@@ -17,6 +22,68 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
+    networks:
+      - autoone-network
+
+networks:
+  autoone-network:
+
+
+services:
+  autoone-ai:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      # optional
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    command: >
+      gunicorn app.main:app
+      -k uvicorn.workers.UvicornWorker
+      -w 4
+      -b 0.0.0.0:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models 
+
+
+
+
+
+
+
+services:
+  autoone-ai-service:
+    build: .
+    container_name: autoone-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DEEPL_API_KEY=${DEEPL_API_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - VIN_DECODER_URL=${VIN_DECODER_URL}
+      - VIN_DECODER_API_KEY=${VIN_DECODER_API_KEY}
+    command: >
+      gunicorn app.main:app
+      -k uvicorn.workers.UvicornWorker
+      -w 4
+      -b 0.0.0.0:8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
     networks:
       - autoone-network
 

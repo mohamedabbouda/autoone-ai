@@ -7,6 +7,8 @@ from app.search.search_engine import SparePartSearchEngine
 from app.services.parts_event_logger import PartsEventLogger
 from app.search.filters import apply_filters, paginate
 from app.vin.vin_decoder import MockVinDecoder, is_valid_vin
+from app.compatibility.compatibility_engine import CompatibilityEngine
+
 from app.models.vehicle_profile import VehicleProfile
 
 
@@ -15,6 +17,8 @@ router = APIRouter()
 logger = PartsEventLogger()
 engine = SparePartSearchEngine(MOCK_SPARE_PARTS)
 vin_decoder = MockVinDecoder()
+compat_engine = CompatibilityEngine()
+
 
 
 
@@ -162,6 +166,7 @@ async def search_spare_parts_by_vin(req: VinSearchRequest):
         # 2) vehicle-based filtering (only if your parts have car_make/car_model)
         filtered_vehicle = candidates
 
+
         if vehicle.make:
             filtered_vehicle = [
                 p for p in filtered_vehicle
@@ -190,6 +195,19 @@ async def search_spare_parts_by_vin(req: VinSearchRequest):
             page=req.page,
             page_size=req.page_size,
         )
+        enriched_results = []
+        for p in page_items:
+            comp = compat_engine.check(vehicle, p)
+            item = p.model_dump() if hasattr(p, "model_dump") else dict(p)
+            item["compatibility"] = {
+                "compatible": comp.compatible,
+                "confidence": comp.confidence,
+                "reasons": comp.reasons,
+            }
+        enriched_results.append(item)
+
+
+        
 
         # ✅ log impression
         logger.log_impression(
@@ -213,7 +231,7 @@ async def search_spare_parts_by_vin(req: VinSearchRequest):
             "page_size": req.page_size,
             "total": total,
             "total_pages": total_pages,
-            "results": page_items,
+            "results": enriched_results,
         }
 
     except HTTPException:
