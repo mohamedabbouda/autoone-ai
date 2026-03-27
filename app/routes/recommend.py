@@ -212,6 +212,59 @@ async def recommend(req: RecommendRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# @router.post("/recommend_ml")
+# async def recommend_ml(req: RecommendRequest):
+#     try:
+#         lat = req.lat if req.lat is not None else 52.5200
+#         lng = req.lng if req.lng is not None else 13.4050
+
+#         source = MockServiceSource()
+#         services = source.load_services()
+
+#         engine = RecommendationEngine(services=services, config=FeatureConfig())
+
+#         request_id = str(uuid.uuid4())
+#         now = datetime.utcnow()
+
+#         context = RecommendationContext(
+#             request_id=request_id,
+#             service_type=req.service,  # ✅ service is str
+#             user_lat=lat,
+#             user_lng=lng,
+#             request_time=now,
+#             user_id=req.user_id,
+
+#         )
+
+#         # Get candidates + features
+#         results, feats = engine.recommend_with_features(lat, lng, context.service_type)
+
+#         # ML scores for the returned candidates
+#         ml_scores = score_services_ml(
+#             services=results,
+#             features_by_id=feats,
+#             hour=now.hour,
+#             dayofweek=now.weekday(),
+#         )
+
+#         # Attach ml_score and sort
+#         for s in results:
+#             s.ml_score = ml_scores.get(s.id, 0.0)
+
+#         results.sort(key=lambda x: (not x.is_available, -(getattr(x, "ml_score", 0.0))))
+
+#         logger.log_impression(context, results, feats)
+
+#         if not results:
+#             return {"request_id": request_id, "message": f"No services found for type '{context.service_type}'"}
+
+#         return {"request_id": request_id, "recommendations": results}
+
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.post("/recommend_ml")
 async def recommend_ml(req: RecommendRequest):
     try:
@@ -226,20 +279,10 @@ async def recommend_ml(req: RecommendRequest):
         request_id = str(uuid.uuid4())
         now = datetime.utcnow()
 
-        context = RecommendationContext(
-            request_id=request_id,
-            service_type=req.service,  # ✅ service is str
-            user_lat=lat,
-            user_lng=lng,
-            request_time=now,
-            user_id=req.user_id,
+        # Get candidates + features first
+        results, feats = engine.recommend_with_features(lat, lng, req.service)
 
-        )
-
-        # Get candidates + features
-        results, feats = engine.recommend_with_features(lat, lng, context.service_type)
-
-        # ML scores for the returned candidates
+        # Try ML scoring
         ml_scores = score_services_ml(
             services=results,
             features_by_id=feats,
@@ -247,22 +290,53 @@ async def recommend_ml(req: RecommendRequest):
             dayofweek=now.weekday(),
         )
 
-        # Attach ml_score and sort
-        for s in results:
-            s.ml_score = ml_scores.get(s.id, 0.0)
+        # ✅ Decide whether ML really worked
+        ranking_mode = "ml" if ml_scores else "rules_fallback"
 
-        results.sort(key=lambda x: (not x.is_available, -(getattr(x, "ml_score", 0.0))))
+        # Build context after deciding ranking mode
+        context = RecommendationContext(
+            request_id=request_id,
+            service_type=req.service,
+            user_lat=lat,
+            user_lng=lng,
+            request_time=now,
+            user_id=req.user_id,
+            ranking_mode=ranking_mode,   # make sure this field exists in RecommendationContext
+        )
+
+        # ✅ If ML works, sort by ml_score
+        if ml_scores:
+            for s in results:
+                s.ml_score = ml_scores.get(s.id, 0.0)
+
+            results.sort(
+                key=lambda x: (not x.is_available, -(x.ml_score or 0.0))
+            )
+
+        # ✅ If ML fails, fall back to rule score
+        else:
+            for s in results:
+                s.ml_score = None
+
+            results.sort(
+                key=lambda x: (not x.is_available, -(x.score or 0.0))
+            )
 
         logger.log_impression(context, results, feats)
 
         if not results:
-            return {"request_id": request_id, "message": f"No services found for type '{context.service_type}'"}
+            return {
+                "request_id": request_id,
+                "message": f"No services found for type '{req.service}'"
+            }
 
-        return {"request_id": request_id, "recommendations": results}
+        return {
+            "request_id": request_id,
+            "recommendations": results
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 class ClickRequest(BaseModel):
     request_id: str
@@ -290,3 +364,12 @@ async def recommend_click(req: ClickRequest):
         return {"ok": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+
+
+
+
+

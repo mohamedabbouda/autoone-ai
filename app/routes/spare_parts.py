@@ -85,7 +85,7 @@ async def search_spare_parts(req: SearchRequest):
                 "vin": req.vin,
                 "in_stock": req.in_stock,
             },
-            "page": req.page,
+            "page": page,
             "page_size": req.page_size,
             "total": total,
             "total_pages": total_pages,
