@@ -1,0 +1,2 @@
+{"vin": "WVWZZZ1KZJW000001", "user_id": "u123", "alert_type": "maintenance_warning", "severity": "high", "message": "Random/multiple cylinder misfire. Service is recommended soon.", "created_at": "2026-04-04T20:51:33.347684", "acknowledged": false}
+{"vin": "WVWZZZ1KZJW000001", "user_id": "u123", "alert_type": "maintenance_warning", "severity": "medium", "message": "Coolant temperature below optimal. Service is recommended soon.", "created_at": "2026-04-04T20:52:01.414399", "acknowledged": false}
